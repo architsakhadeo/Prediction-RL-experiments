@@ -12,7 +12,7 @@ Reward = Partial state
 '''
 
 class RingWorld():
-	def __init__(self):
+	def __init__(self, ringworld_size):
 		'''
 		Initialize parameters of the environment
 		'''
@@ -22,7 +22,7 @@ class RingWorld():
 		self.fullstate = None
 		self.partialstate = None
 		self.reward = 0
-		self.ringsize = 6 #100 and 1 vs 1000 and 9:1
+		self.ringsize = ringworld_size #100 and 1 vs 1000 and 9:1
 		self.lowerbound = 0
 		self.upperbound = self.ringsize-1
 		self.random_states_reward1 = [0]
@@ -53,7 +53,7 @@ class RingWorld():
 		self.timesteps = 0
 		self.fullstate = 0
 		self.partialstate = self.partialobservability(self.fullstate)
-		return self.partialstate
+		return self.partialstate, self.fullstate
 
 	def step(self, action):
 		'''
@@ -82,5 +82,5 @@ class RingWorld():
 			self.reward = 0
 
 
-		return self.partialstate, self.reward
+		return self.partialstate, self.reward, self.fullstate
 			

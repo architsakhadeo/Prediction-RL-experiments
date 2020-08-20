@@ -38,20 +38,8 @@ def plotMeanAndPercentileRegions(xAxis, data, lower, upper, color, label):
     lowerRun, upperRun = getRegion(data, lower, upper)
     plt.fill_between(xAxis, lowerRun, upperRun, alpha=0.25, color=color, label=label)
 
-labels = ['meanloss','addedloss']
-paths = ['../Data/RingWorld_test4BPTT_meanloss/']#, '../Data/RingWorld_test4BPTT_addedloss/']
-
-#paths = ['../Data/RingWorldData/trunc1/trunc=1_learn=0.0003425487390781751/',
-#'../Data/RingWorldData/trunc2/trunc=2_learn=0.000770734662925894/',
-#'../Data/RingWorldData/trunc3/trunc=3_learn=0.0017341529915832613/',
-#'../Data/RingWorldData/trunc4/trunc=4_learn=0.0026012294873748922/']
-
-#'../Data/RingWorldData/trunc5/trunc=5_learn=0.0011561019943888409/',
-#'../Data/RingWorldData/trunc6/trunc=6_learn=0.00022836582605211672/',
-#'../Data/RingWorldData/trunc7/trunc=7_learn=0.0011561019943888409/',
-#'../Data/RingWorldData/trunc8/trunc=8_learn=6.766394845988644e-05/',
-#'../Data/RingWorldData/trunc9/trunc=9_learn=0.0011561019943888409/',
-#'../Data/RingWorldData/trunc10/trunc=10_learn=3.007286598217175e-05/']
+labels = ['trunc=1', 'trunc=2', 'trunc=4']#, 'trunc=6', 'trunc=10', 'trunc=16']
+paths = ['../Data/RingWorldSweepData/ringsize=6_gamma=0.0_hiddenunits=6_' + labels[i] + '_learnrate=0.0005/' for i in range(len(labels))]
 
 type = 'Simple' # Simple or Random
 
@@ -200,5 +188,5 @@ plt.yticks()
 plt.xticks()
 plt.tight_layout()
 plt.show()
-#plt.savefig('../images/RingWorld1to4stepBPTT.png',dpi=500, bbox_inches='tight')
+#plt.savefig('../images/test5.png',dpi=500, bbox_inches='tight')
 

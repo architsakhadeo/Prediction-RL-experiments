@@ -19,7 +19,6 @@ class RNNAgent():
 		np.random.seed(run)
 		torch.manual_seed(run)
 
-		self.timesteps = 0
 		self.finallosslist = np.array([])
 		self.finalobservationslist = np.array([])
 
@@ -57,12 +56,7 @@ class RNNAgent():
 		Agent receives an observation and a reward for the action it took earlier
 		It returns another action based on this observation and reward
 		'''
-
-
-		self.timesteps += 1
-		if self.timesteps % 10000 == 0:
-			print(self.timesteps)
-
+		
 		self.new_observation = torch.tensor(observation, dtype=torch.float).view(1)
 		
 		
@@ -77,7 +71,6 @@ class RNNAgent():
 
 			loss = self.train(self.observation_buffer, self.new_observation_buffer, self.action)
 
-
 			'''
 			Agent returns an action		
 			New observation becomes old observation as agent steps into time
@@ -86,11 +79,10 @@ class RNNAgent():
 
 		self.action = torch.randint(0, 2, (1,))[0]
 		self.old_observation = self.new_observation
-
 		self.observation_buffer = torch.cat([self.observation_buffer, self.old_observation])[-self.seq_len:]
 		
 		if end == True:
-			dirpath = 'Data/RingWorld_test4BPTT_meanloss/'
+			dirpath = 'Data/RingWorldRNNData/'
 			if not os.path.exists(dirpath):
 				os.makedirs(dirpath)
 
@@ -124,7 +116,6 @@ class RNNAgent():
 		return input
 
 
-
 	def train(self, observation_buffer, new_observation_buffer, action):
 		'''
 		Forward pass to calculate prediction of value of the old state-action
@@ -134,28 +125,10 @@ class RNNAgent():
 		'''
 		
 		self.value_old_state_action = self.model.forward(self.getInput(observation_buffer, action))
-				
-		'''
-		Expected SARSA like update (for prediction to learn action values) over policy = 0.5 probability
-		'''
-		# GAMMA = 0, omit target value new state		
-		#value_new_state_0 = self.model.forward(self.getInput(new_observation_buffer, torch.tensor(0)))
-		#value_new_state_1 = self.model.forward(self.getInput(new_observation_buffer, torch.tensor(1)))
-		#self.target_value_new_state = (value_new_state_0 + value_new_state_1)/2.0
-
-		'''
-		Can set gamma = 0 on encountering state with observation = 1
-		to indicate end of prediction
-		'''
-		#if self.new_observation == 1:
-		#	prediction = - self.value_old_state_action
-		#else:
-		#	prediction = self.gamma * self.target_value_new_state - self.value_old_state_action
-
 		prediction = - self.value_old_state_action
 
 		'''	
-		Calculates TDE loss
+		Calculates TDE
 		'''
 		
 		loss = self.backward(new_observation_buffer, prediction)
@@ -176,9 +149,8 @@ class RNNAgent():
 		'''
 
 		delta = new_observation_buffer + prediction
-		self.loss = (delta) ** 2 #RMSVE , VE = squared error, so RMSVE is root mean squared squared error
-		loss = torch.sum(self.loss)/len(self.loss)
-
+		self.loss = (delta) ** 2
+		loss = torch.sum(self.loss)
 		self.optimizer.zero_grad()
 		loss.backward()
 		self.optimizer.step()
@@ -247,7 +219,6 @@ class RNNState(nn.Module):
 		self.hiddenstate = self.hiddenstate.detach()
 		'''
 
-		
 		input = input.view(self.seq_len, self.batch, self.input_size)
 		self.output, self.hiddenstate = self.rnn(input, self.hiddenstate)
 		self.prediction = self.fc(self.output).view(self.seq_len)
