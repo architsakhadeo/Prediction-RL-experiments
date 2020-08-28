@@ -2,5 +2,7 @@ pred-states-env/
 __pycache__/
 .vscode/
 Data/
+testData/
+oldData/
 olderData/
 images/

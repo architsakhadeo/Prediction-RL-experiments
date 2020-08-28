@@ -39,8 +39,11 @@ def plotMeanAndPercentileRegions(xAxis, data, lower, upper, color, label):
     plt.fill_between(xAxis, lowerRun, upperRun, alpha=0.25, color=color, label=label)
 
 labels = ['trunc=1', 'trunc=2', 'trunc=4']#, 'trunc=6', 'trunc=10', 'trunc=16']
-paths = ['../Data/RingWorldSweepData/ringsize=6_gamma=0.0_hiddenunits=6_' + labels[i] + '_learnrate=0.0005/' for i in range(len(labels))]
-
+gamma = str(1.0)
+#labels = ['complex','simple']
+#paths = ['../Data/RingWorldSweepData/ringsize=6_gamma=0.0_hiddenunits=6_' + labels[i] + '_learnrate=0.0005/' for i in range(len(labels))]
+#paths = ['../Data/RingWorldSweepData/ringsize=6/hiddenunits=3_trunc=1/ringsize=6_gamma=0.0_hiddenunits=3_trunc=1_learnrate=0.001/RingWorldSweepData/ringsize=6_gamma=0.0_hiddenunits=3_trunc=1_learnrate=0.001/', '../Data/RingWorldSweepData/ringsize=6/hiddenunits=3_trunc=2/ringsize=6_gamma=0.0_hiddenunits=3_trunc=2_learnrate=0.005/RingWorldSweepData/ringsize=6_gamma=0.0_hiddenunits=3_trunc=2_learnrate=0.005/','../Data/RingWorldSweepData/ringsize=6/hiddenunits=3_trunc=4/ringsize=6_gamma=0.0_hiddenunits=3_trunc=4_learnrate=0.001/RingWorldSweepData/ringsize=6_gamma=0.0_hiddenunits=3_trunc=4_learnrate=0.001/', '../Data/RingWorldSweepData/ringsize=6/hiddenunits=3_trunc=6/ringsize=6_gamma=0.0_hiddenunits=3_trunc=6_learnrate=0.001/RingWorldSweepData/ringsize=6_gamma=0.0_hiddenunits=3_trunc=6_learnrate=0.001/', '../Data/RingWorldSweepData/ringsize=6/hiddenunits=3_trunc=10/ringsize=6_gamma=0.0_hiddenunits=3_trunc=10_learnrate=0.005/RingWorldSweepData/ringsize=6_gamma=0.0_hiddenunits=3_trunc=10_learnrate=0.005/','../Data/RingWorldSweepData/ringsize=6/hiddenunits=3_trunc=16/ringsize=6_gamma=0.0_hiddenunits=3_trunc=16_learnrate=0.005/RingWorldSweepData/ringsize=6_gamma=0.0_hiddenunits=3_trunc=16_learnrate=0.005/']
+paths = ['../testData/RingWorldtestData/ringsize=6_gamma=' + gamma + '_hiddenunits=6_'+labels[i]+'_learnrate=0.0005/' for i in range(len(labels))]
 type = 'Simple' # Simple or Random
 
 for path in paths:
@@ -187,6 +190,7 @@ plt.legend(loc=0)
 plt.yticks()
 plt.xticks()
 plt.tight_layout()
-plt.show()
-#plt.savefig('../images/test5.png',dpi=500, bbox_inches='tight')
+plt.ylim(0.0, 1.0)
+#plt.show()
+plt.savefig('../images/' + gamma + '.png',dpi=500, bbox_inches='tight')
 

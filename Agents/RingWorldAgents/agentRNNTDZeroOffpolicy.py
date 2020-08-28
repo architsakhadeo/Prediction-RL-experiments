@@ -53,7 +53,7 @@ class RNNAgent():
 		Agent returns an action. New observation becomes old observation as agent steps into time
 		'''		
 
-		self.old_action = torch.randint(0, 2, (1,))[0]
+		self.old_action = torch.randint(0, 2, (1,))[0].int()
 
 		return self.old_action
 
@@ -88,19 +88,19 @@ class RNNAgent():
 
 		self.fullstate = new_fullstate
 
-		self.new_action = torch.randint(0, 2, (1,))[0]
+		self.new_action = torch.randint(0, 2, (1,))[0].int()
 		self.new_action_buffer = torch.cat([self.new_action_buffer, self.new_action.view(1)])[-self.truncation_length:]
 
 		
 		if self.new_action == torch.tensor(1):
-			self.rho_buffer = torch.cat([self.rho_buffer, torch.tensor(0).view(1)])[-self.truncation_length:]
+			self.rho_buffer = torch.cat([self.rho_buffer, torch.tensor(0.0).view(1)])[-self.truncation_length:]
 		elif self.new_action == torch.tensor(0):
-			self.rho_buffer = torch.cat([self.rho_buffer, torch.tensor(2).view(1)])[-self.truncation_length:]
+			self.rho_buffer = torch.cat([self.rho_buffer, torch.tensor(2.0).view(1)])[-self.truncation_length:]
 
 		self.old_action = self.new_action
 
 		if end == True:
-			dirpath = 'Data/RingWorldSweepData/' + 'ringsize=' + str(self.ringworld_size) + '_' + 'gamma=' + str(self.gamma) + '_' + 'hiddenunits=' + str(self.hiddenstate_size)  + '_' + 'trunc=' + str(self.truncation_length) + '_' + 'learnrate=' + str(self.learning_rate) + '/'
+			dirpath = 'testData/RingWorldtestData/' + 'ringsize=' + str(self.ringworld_size) + '_' + 'gamma=' + str(self.gamma) + '_' + 'hiddenunits=' + str(self.hiddenstate_size)  + '_' + 'trunc=' + str(self.truncation_length) + '_' + 'learnrate=' + str(self.learning_rate) + '/'
 			if not os.path.exists(dirpath):
 				os.makedirs(dirpath)
 			pickle.dump(self.finallosslist, open(dirpath + 'run'+str(run)+'_lossSimple','wb'))
@@ -150,13 +150,13 @@ class RNNAgent():
 			action = action_buffer[i].view(1)
 
 			temp = torch.cat([temp, observation])
-			temp = torch.cat([temp, torch.tensor(1).view(1) - observation])
+			temp = torch.cat([temp, torch.tensor(1.0).view(1) - observation])
 			if action == torch.tensor([0]):	
-				temp = torch.cat([temp, torch.tensor(1).view(1)])
-				temp = torch.cat([temp, torch.tensor(0).view(1)])
+				temp = torch.cat([temp, torch.tensor(1.0).view(1)])
+				temp = torch.cat([temp, torch.tensor(0.0).view(1)])
 			elif action == torch.tensor([1]):
-				temp = torch.cat([temp, torch.tensor(0).view(1)])
-				temp = torch.cat([temp, torch.tensor(1).view(1)])
+				temp = torch.cat([temp, torch.tensor(0.0).view(1)])
+				temp = torch.cat([temp, torch.tensor(1.0).view(1)])
 
 			input = torch.cat([input, temp])
 
@@ -172,18 +172,21 @@ class RNNAgent():
 		Calculates loss as TD error with target as sum of cumulant
 		and discounted expected value of next state-actions 
 		'''
-
-		self.value_old_state = self.model.forward(self.getInput1(old_observation_buffer, old_action_buffer))
+		truevalues = [torch.tensor(self.gamma**5), torch.tensor(1.0), torch.tensor(self.gamma**1), torch.tensor(self.gamma**2), torch.tensor(self.gamma**3), torch.tensor(self.gamma**4)]
+		
+		self.value_old_state = self.model.forward(self.getInput1(old_observation_buffer, old_action_buffer), type='old')
 		
 		prediction = self.value_old_state
 
 		
-		if self.gamma == 0.0:
-			target = self.new_observation_buffer
-		else:
-			self.value_new_state = self.model.forward(self.getInput1(new_observation_buffer, new_action_buffer))
-			target = self.new_observation_buffer + self.gamma * self.value_new_state
-
+		with torch.no_grad():
+			self.value_new_state = self.model.forward(self.getInput1(new_observation_buffer, new_action_buffer),type='new')
+			if new_observation_buffer[-1] == torch.tensor(1.0):
+				gamma_v = 0
+			else:
+				gamma_v = self.gamma 	
+			target = self.new_observation_buffer + gamma_v * self.value_new_state
+		
 		delta = target - prediction
 
 		self.loss = self.rho_buffer * (delta**2)
@@ -193,10 +196,14 @@ class RNNAgent():
 		loss.backward()
 		self.optimizer.step()
 
-		if old_fullstate == 1:	
-			storedloss = ((( torch.tensor(1.0) - prediction[-1])**2)**0.5).item()
-		else:
+		storedloss = ((( truevalues[old_fullstate] - prediction[-1])**2)**0.5).item()
+
+		'''
+		if old_fullstate == 0:	
 			storedloss = ((( torch.tensor(0.0) - prediction[-1])**2)**0.5).item()
+		elif old_fullstate	storedloss = ((( torch.tensor(self.gamma * 1.0) - prediction[-1])**2)**0.5).item()
+		else:
+		'''
 	
 		self.finallosslist = np.append(self.finallosslist, storedloss)
 		self.finalobservationslist = np.append(self.finalobservationslist, self.new_observation)
@@ -239,13 +246,18 @@ class RNNState(nn.Module):
 		self.fc = nn.Linear(self.hiddenstate_size, self.output_size)
 
 
-	def forward(self, input):
+	def forward(self, input, type):
 		'''
 		Forward pass through the state representation
 		'''
-		input = input.view(self.seq_len, self.batch, self.input_size)		
-		self.hiddenstate = self.hiddenstate.detach()
-		self.output, self.hiddenstate = self.rnn(input, self.hiddenstate)
-		self.prediction = self.fc(self.output).view(self.seq_len)
-		self.hiddenstate = self.output[0].view(1, self.batch, self.hiddenstate_size)
+		if type == 'old':
+			input = input.view(self.seq_len, self.batch, self.input_size)		
+			self.hiddenstate = self.hiddenstate.detach()
+			self.output, self.hiddenstate = self.rnn(input, self.hiddenstate)
+			self.prediction = self.fc(self.output).view(self.seq_len)
+			self.hiddenstate = self.output[0].view(1, self.batch, self.hiddenstate_size)
+		elif type == 'new':
+			input = input.view(self.seq_len, self.batch, self.input_size)		
+			self.output, self.hiddenstatenew = self.rnn(input, self.hiddenstate)
+			self.prediction = self.fc(self.output).view(self.seq_len)
 		return self.prediction
